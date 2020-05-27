@@ -15,6 +15,9 @@ class ArticlePost(models.Model):
     # 修改时间
     updated = models.DateTimeField(auto_now=True)
 
+    # 浏览量
+    total_views = models.PositiveIntegerField(default=0)  # 储存正整数的字段，初始值为零
+
     class Meta:
         db_table = 'article_post'
         # '-created' 表明数据应该以倒序排列

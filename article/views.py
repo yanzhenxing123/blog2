@@ -5,17 +5,35 @@ import markdown
 from .forms import ArticlePostForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
 
 def article_list(request):
-    articles = ArticlePost.objects.all()
+    if request.GET.get('order') == 'total_views':
+        article_list = ArticlePost.objects.all().order_by('-total_views')
+        order = 'total_views'
+    else:
+        article_list = ArticlePost.objects.all()
+        order = 'normal'
+
+    # 分页，每页显示一篇文章
+    paginator = Paginator(article_list, 3)
+    page = request.GET.get('page')
+    articles = paginator.get_page(page)
+
     context = {
-        'articles':articles
+        'articles':articles,
+        'order': order,
     }
     return render(request, 'article/list.html', context=context)
 
 def article_detail(request, id):
     article = ArticlePost.objects.get(id=id)
+
+    # 浏览量+1
+    article.total_views += 1
+    article.save(update_fields=['total_views'])  # 只执行total_views优化效率
+
     # 将markdown语法渲染成html样式
     article.body = markdown.markdown(article.body,
         extensions=[
@@ -76,7 +94,6 @@ def article_safe_delete(request, id):
 @login_required(login_url='/userprofile/login/')
 def article_update(request, id):
     user = User.objects.filter(articlepost__id=id).first()
-    print(user)
     if request.user != user:
         return HttpResponse('你没有权限修改此文章')
     else:
@@ -98,3 +115,4 @@ def article_update(request, id):
             context = {'article': article, 'article_post_form': article_post_form}
             # 将响应返回到模板中
             return render(request, 'article/update.html', context)
+
