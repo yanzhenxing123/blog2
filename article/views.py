@@ -6,24 +6,44 @@ from .forms import ArticlePostForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 
 
 def article_list(request):
-    if request.GET.get('order') == 'total_views':
-        article_list = ArticlePost.objects.all().order_by('-total_views')
-        order = 'total_views'
+    search = request.GET.get('search')
+    order = request.GET.get('order')
+    if search:
+        # 排序问题
+        if order == 'total_views':
+            # 返回QuerySet对象
+            article_list = ArticlePost.objects.filter(
+                Q(title__icontains=search) |
+                Q(body__icontains=search)
+            ).order_by('-total_views')
+        else:
+            article_list = ArticlePost.objects.filter(
+                Q(title__icontains=search) |
+                Q(body__icontains=search)
+            )
     else:
-        article_list = ArticlePost.objects.all()
-        order = 'normal'
+        search = ''
+        if order == 'total_views':
+            article_list = ArticlePost.objects.all().order_by('-total_views')
+        else:
+            article_list = ArticlePost.objects.all()
 
-    # 分页，每页显示一篇文章
+
+    # 分页，每页显示一篇文章, 每三个做一页
     paginator = Paginator(article_list, 3)
+    # 从GET请求种获取页码数
     page = request.GET.get('page')
+    # 获取请求中页码的文章
     articles = paginator.get_page(page)
 
     context = {
         'articles':articles,
         'order': order,
+        'search':search
     }
     return render(request, 'article/list.html', context=context)
 
@@ -35,15 +55,21 @@ def article_detail(request, id):
     article.save(update_fields=['total_views'])  # 只执行total_views优化效率
 
     # 将markdown语法渲染成html样式
-    article.body = markdown.markdown(article.body,
+    md = markdown.Markdown(
         extensions=[
         # 包含 缩写、表格等常用扩展
         'markdown.extensions.extra',
         # 语法高亮扩展
         'markdown.extensions.codehilite',
-        ])
+        # 目录扩展
+        'markdown.extensions.toc',
+        ]
+    )
+
+    article.body = md.convert(article.body)
     context = {
-        'article': article
+        'article': article,
+        'toc': md.toc,
     }
     return render(request, 'article/detail.html', context=context)
 
