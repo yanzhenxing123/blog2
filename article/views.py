@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-
+from comment.models import Comment
 
 def article_list(request):
     search = request.GET.get('search')
@@ -49,6 +49,7 @@ def article_list(request):
 
 def article_detail(request, id):
     article = ArticlePost.objects.get(id=id)
+    comments = Comment.objects.filter(article=id)
 
     # 浏览量+1
     article.total_views += 1
@@ -70,6 +71,7 @@ def article_detail(request, id):
     context = {
         'article': article,
         'toc': md.toc,
+        'comments': comments,
     }
     return render(request, 'article/detail.html', context=context)
 

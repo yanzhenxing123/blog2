@@ -29,6 +29,7 @@ urlpatterns = [
     path('', index, name='index'),
     path('userprofile/', include('userprofile.urls', namespace='userprofile')),
     path('password-reset/', include('password_reset.urls')),
+    path('commment/', include('comment.urls', namespace='comment')),
 
 ]
 
