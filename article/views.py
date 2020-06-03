@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from comment.models import Comment
+from .models import ArticleColumn
 
 def article_list(request):
     search = request.GET.get('search')
@@ -82,16 +83,21 @@ def article_create(request):
         if article_post_form.is_valid():
             new_article = article_post_form.save(commit=False)
             new_article.author = User.objects.get(id=request.user.id)
+            if request.POST['column'] != 'none':
+                new_article.column = ArticleColumn.objects.get(id=request.POST['column'])
             new_article.save()
             return redirect(reverse('article:article_list'))
         else:
             return HttpResponse('表单内容填写有误')
     else:
-        # article_post_form = ArticlePostForm()
-        # context = {
-        #     'article': article_post_form
-        # }a
-        return render(request, 'article/create.html')
+        columns = ArticleColumn.objects.all()
+        article_post_form = ArticlePostForm()
+        context = {
+            'article': article_post_form,
+            'columns': columns
+        }
+
+        return render(request, 'article/create.html', context=context)
 
 @login_required(login_url='/userprofile/login/')
 def article_delete(request, id):
@@ -130,17 +136,23 @@ def article_update(request, id):
             if article_post_form.is_valid():
                 title = article_post_form.cleaned_data.get('title')
                 body = article_post_form.cleaned_data.get('body')
-                ArticlePost.objects.filter(id=id).update(title=title, body=body)
+
+                if request.POST['column'] != 'none':
+                    column = ArticleColumn.objects.get(id=request.POST['column'])
+                else:
+                    column = None
+                ArticlePost.objects.filter(id=id).update(title=title, body=body, column=column)
 
                 return redirect("article:article_detail", id=id)
             else:
                 return HttpResponse("表单内容有误，请重新填写")
         else:
+            columns = ArticleColumn.objects.all()
             article = ArticlePost.objects.get(id=id)
             # 创建表单类实例
             article_post_form = ArticlePostForm()
             # 赋值上下文，将 article 文章对象也传递进去，以便提取旧的内容
-            context = {'article': article, 'article_post_form': article_post_form}
+            context = {'article': article, 'article_post_form': article_post_form, 'columns': columns}
             # 将响应返回到模板中
             return render(request, 'article/update.html', context)
 

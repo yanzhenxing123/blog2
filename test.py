@@ -1,25 +1,13 @@
+class Car:
+    def __init__(self, newWheelNum, newColor):
+        self.wheelNum = newWheelNum
+        self.color = newColor
 
-def combinationSum(candidates,  target):
-    candidates.sort()
-    length = len(candidates)
-    if length <= 0:
-        return
-    result = []
-    temp_result = []
-    def auxiliary(index, temp_result, target):
-        if target == 0:
-            result.append(temp_result)
-            return
-        if index == length or target < candidates[index]:
-            return
-        auxiliary(index, temp_result + [candidates[index]], target - candidates[index])
-        auxiliary(index + 1, temp_result, target)
-    auxiliary(0, temp_result, target)
-    return result
+    def __str__(self):
+        msg = "嘿。。。我的颜色是" + self.color + "我有" + str(self.wheelNum) + "个轮胎..."
+        return msg
 
-
-if __name__ == '__main__':
-    res  = combinationSum([2,3,6,7], 7)
-    print(res)
-
-
+    def move(self):
+        print('车在跑，目标:夏威夷')
+BMW = Car(4, "白色")
+print(BMW)
